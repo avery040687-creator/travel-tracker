@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff" id="theme-meta">
+<title>✈ 旅行記帳本</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root {
+  --bg:#ffffff; --bg2:#f5f5f3; --bg3:#ebebea;
+  --text:#1a1a1a; --text2:#6b6b6b; --text3:#9b9b9b;
+  --border:rgba(0,0,0,0.1); --border2:rgba(0,0,0,0.18);
+  --radius:10px; --radius-lg:14px;
+  --shadow:0 1px 6px rgba(0,0,0,0.08);
+  --accent:#1a1a1a;
+  --nav-h:64px;
+}
+[data-theme="dark"] {
+  --bg:#1c1c1e; --bg2:#252528; --bg3:#2e2e32;
+  --text:#f0f0f0; --text2:#a0a0a0; --text3:#606060;
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
+  --shadow:0 1px 6px rgba(0,0,0,0.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg2);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── App Shell ── */
+.app-wrap{display:flex;min-height:100vh;}
+
+/* ── Desktop Sidebar ── */
+.sidebar{width:240px;background:var(--bg);border-right:0.5px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:20;}
+.sb-header{padding:1.25rem 1rem 1rem;border-bottom:0.5px solid var(--border);}
+.sb-logo{font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.sb-logo-icon{font-size:22px;}
+.sb-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.sb-body{padding:1rem;flex:1;overflow-y:auto;}
+.sb-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+.trip-list{display:flex;flex-direction:column;gap:4px;margin-bottom:1rem;}
+.trip-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);border:none;background:none;text-align:left;width:100%;transition:background .1s;}
+.trip-item:hover{background:var(--bg2);color:var(--text);}
+.trip-item.active{background:var(--text);color:var(--bg);}
+.trip-flag{font-size:16px;flex-shrink:0;}
+.trip-info{flex:1;min-width:0;}
+.trip-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.trip-date{font-size:11px;opacity:.65;margin-top:1px;}
+.add-trip-btn{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text3);border:0.5px dashed var(--border2);background:none;width:100%;transition:all .12s;}
+.add-trip-btn:hover{color:var(--text);background:var(--bg2);}
+.sb-footer{padding:.75rem 1rem;border-top:0.5px solid var(--border);display:flex;gap:6px;}
+.sb-btn{flex:1;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:6px 8px;cursor:pointer;font-size:12px;color:var(--text2);}
+.sb-btn:hover{background:var(--bg2);}
+
+/* ── Main content ── */
+.main{margin-left:240px;flex:1;padding:2rem;max-width:980px;}
+
+/* ── Mobile header ── */
+.mob-header{display:none;position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 16px;height:52px;align-items:center;justify-content:space-between;}
+.mob-title{font-size:17px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.mob-hbtns{display:flex;gap:4px;}
+.mob-hbtn{background:none;border:none;padding:8px;cursor:pointer;color:var(--text2);font-size:20px;border-radius:8px;}
+.mob-hbtn:active{background:var(--bg3);}
+
+/* ── Mobile bottom nav ── */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--bg);border-top:0.5px solid var(--border);z-index:30;padding:0 8px;padding-bottom:env(safe-area-inset-bottom);}
+.mob-nav-inner{display:flex;height:100%;align-items:center;justify-content:space-around;}
+.mob-nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border:none;background:none;cursor:pointer;color:var(--text3);border-radius:10px;flex:1;min-width:0;}
+.mob-nav-btn.active{color:var(--text);}
+.mob-nav-btn i{font-size:22px;}
+.mob-nav-label{font-size:10px;font-weight:500;}
+
+/* ── Mobile trip drawer ── */
+.mob-drawer-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;}
+.mob-drawer-backdrop.open{display:block;}
+.mob-drawer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-radius:20px 20px 0 0;z-index:50;max-height:80vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);}
+.mob-drawer.open{transform:translateY(0);}
+.mob-drawer-handle{width:36px;height:4px;background:var(--bg3);border-radius:99px;margin:10px auto 0;}
+.mob-drawer-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;}
+.mob-drawer-title{font-size:16px;font-weight:600;}
+.mob-drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);padding:4px;}
+.mob-drawer-body{flex:1;overflow-y:auto;padding:0 16px 16px;}
+.mob-trip-item{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:12px;cursor:pointer;border:none;background:none;width:100%;text-align:left;margin-bottom:4px;}
+.mob-trip-item:active{background:var(--bg2);}
+.mob-trip-item.active{background:var(--text);color:var(--bg);}
+.mob-trip-flag{font-size:24px;}
+.mob-trip-info{flex:1;}
+.mob-trip-name{font-size:15px;font-weight:500;}
+.mob-trip-date{font-size:12px;color:var(--text3);margin-top:2px;}
+.mob-trip-item.active .mob-trip-date{color:var(--bg);opacity:.7;}
+.mob-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:0.5px dashed var(--border2);border-radius:12px;background:none;cursor:pointer;font-size:14px;color:var(--text3);width:100%;margin-top:8px;}
+.mob-add-btn:active{background:var(--bg2);}
+
+/* ── Pages (mobile tab system) ── */
+.page{display:block;}
+.page.hidden{display:none;}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+.stat-card{background:var(--bg);border-radius:var(--radius-lg);padding:14px;border:0.5px solid var(--border);}
+.stat-card.good{background:#EAF3DE;border-color:#C0DD97;}
+.stat-card.warn{background:#FAEEDA;border-color:#FAC775;}
+.stat-card.danger{background:#FCEBEB;border-color:#F7C1C1;}
+.stat-label{font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.03em;margin-bottom:6px;text-transform:uppercase;}
+.stat-card.good .stat-label{color:#3B6D11;}
+.stat-card.warn .stat-label{color:#854F0B;}
+.stat-card.danger .stat-label{color:#A32D2D;}
+.stat-value{font-size:18px;font-weight:700;color:var(--text);line-height:1;}
+.stat-card.good .stat-value{color:#27500A;}
+.stat-card.warn .stat-value{color:#633806;}
+.stat-card.danger .stat-value{color:#791F1F;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.stat-card.good .stat-sub{color:#3B6D11;}
+.stat-card.warn .stat-sub{color:#854F0B;}
+.stat-card.danger .stat-sub{color:#A32D2D;}
+
+/* ── Account toggle ── */
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;gap:12px;flex-wrap:wrap;}
+.topbar-left h2{font-size:20px;font-weight:700;}
+.topbar-left p{font-size:13px;color:var(--text3);margin-top:2px;}
+.acc-toggle{display:flex;gap:4px;background:var(--bg3);padding:3px;border-radius:var(--radius);}
+.acc-btn{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;background:none;color:var(--text2);transition:all .1s;white-space:nowrap;}
+.acc-btn.active{background:var(--bg);color:var(--text);box-shadow:var(--shadow);}
+
+/* ── Budget ── */
+.budget-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1.25rem;}
+.budget-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap;}
+.budget-title{font-size:14px;font-weight:600;}
+.budget-inp-row{display:flex;align-items:center;gap:6px;}
+.budget-inp-row label{font-size:12px;color:var(--text3);white-space:nowrap;}
+.budget-inp-row input{width:120px;padding:6px 8px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;}
+.budget-inp-row button{padding:6px 12px;border-radius:var(--radius);border:none;background:var(--text);color:var(--bg);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.bar-track{height:8px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:6px;}
+.bar-fill{height:100%;border-radius:99px;transition:width .4s ease;}
+.bar-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);}
+
+/* ── Content grid ── */
+.content-grid{display:grid;grid-template-columns:1fr 320px;gap:1.25rem;}
+.right-col{display:flex;flex-direction:column;gap:1.25rem;}
+
+/* ── Card ── */
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;}
+.card-title{font-size:12px;font-weight:700;color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;}
+
+/* ── Add form ── */
+.form-grid{display:grid;gap:8px;margin-bottom:8px;}
+.g3{grid-template-columns:2fr 1fr 1fr;}
+.g3b{grid-template-columns:1fr 1fr 1fr;}
+.g2{grid-template-columns:1fr 1fr;}
+.field label{display:block;font-size:11px;color:var(--text3);font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em;}
+.field input,.field select{width:100%;padding:9px 10px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:14px;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--text3);}
+.btn-add{width:100%;padding:11px;background:var(--text);color:var(--bg);border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+.btn-add:active{opacity:.8;}
+
+/* ── Expense list ── */
+.exp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.chip{padding:5px 11px;border-radius:99px;font-size:12px;border:0.5px solid var(--border2);background:none;color:var(--text2);cursor:pointer;}
+.chip.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+.exp-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);}
+.exp-item:last-child{border-bottom:none;}
+.exp-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.exp-body{flex:1;min-width:0;}
+.exp-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.exp-meta{font-size:11px;color:var(--text3);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.badge{padding:1px 7px;border-radius:99px;font-size:11px;font-weight:500;}
+.b-personal{background:#E6F1FB;color:#185FA5;}
+.b-group{background:#FAEEDA;color:#854F0B;}
+.exp-right{text-align:right;flex-shrink:0;}
+.exp-local{font-size:14px;font-weight:700;}
+.exp-twd{font-size:11px;color:var(--text3);margin-top:1px;}
+.exp-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:17px;margin-left:6px;padding:4px;opacity:.5;}
+.exp-del:hover,.exp-del:active{opacity:1;color:#E24B4A;}
+.no-items{text-align:center;padding:2rem 1rem;color:var(--text3);font-size:13px;}
+
+/* ── Category bars ── */
+.cat-bar{margin-bottom:9px;}
+.cat-bar-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px;}
+.cat-bar-track{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+.cat-bar-fill{height:100%;border-radius:99px;}
+
+/* ── Rate card ── */
+.rate-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);}
+.rate-row:last-child{border-bottom:none;}
+.rate-code{font-size:13px;font-weight:700;}
+.rate-name{font-size:11px;color:var(--text3);}
+.rate-val{font-size:12px;color:var(--text2);}
+
+/* ── Modal ── */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;align-items:flex-end;justify-content:center;}
+.modal-backdrop.open{display:flex;}
+.modal-box{background:var(--bg);border-radius:20px 20px 0 0;padding:1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+@media(min-width:600px){
+  .modal-backdrop{align-items:center;}
+  .modal-box{border-radius:var(--radius-lg);padding:1.5rem;max-height:85vh;}
+}
+.modal-handle{width:36px;height:4px;background:var(--bg3);border-radius:99px;margin:0 auto 16px;}
+.modal-box h3{font-size:17px;font-weight:700;margin-bottom:1.25rem;}
+.mfield{margin-bottom:12px;}
+.mfield label{display:block;font-size:12px;color:var(--text3);font-weight:500;margin-bottom:4px;text-transform:uppercase;}
+.mfield input,.mfield select{width:100%;padding:10px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:15px;}
+.modal-btns{display:flex;gap:8px;margin-top:1.25rem;}
+.modal-btns button{flex:1;padding:12px;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;}
+.btn-cancel{background:var(--bg2);border:none;color:var(--text2);}
+.btn-confirm{background:var(--text);color:var(--bg);border:none;}
+
+/* ── Cat manager ── */
+.cat-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-bottom:12px;}
+.cat-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);}
+.cat-item-icon{font-size:20px;width:30px;text-align:center;}
+.cat-item-name{flex:1;font-size:14px;}
+.cat-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px;}
+.cat-del:hover{color:#E24B4A;}
+.cat-add-row{display:grid;grid-template-columns:56px 1fr auto;gap:6px;align-items:end;}
+.cat-add-row input{padding:9px 10px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:14px;width:100%;}
+.cat-add-row button{padding:9px 14px;border-radius:var(--radius);background:var(--text);color:var(--bg);border:none;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+
+/* ── Empty state ── */
+.empty-main{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;color:var(--text3);text-align:center;gap:12px;}
+.empty-icon{font-size:56px;opacity:.25;}
+.empty-main p{font-size:15px;}
+.empty-main button{margin-top:8px;padding:12px 24px;border-radius:var(--radius);background:var(--text);color:var(--bg);border:none;font-size:15px;font-weight:600;cursor:pointer;}
+
+/* ── Mobile-only quick add page ── */
+.mob-add-page{padding:16px;}
+.mob-add-page .card-title{font-size:14px;}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .mob-header{display:flex;}
+  .mob-nav{display:block;}
+  .main{margin-left:0;padding:0 0 calc(var(--nav-h) + env(safe-area-inset-bottom)) 0;max-width:100%;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:0 16px;}
+  .topbar{padding:12px 16px 0;margin-bottom:1rem;}
+  .budget-card{margin:12px 16px;border-radius:var(--radius-lg);}
+  .content-grid{grid-template-columns:1fr;padding:0 16px;}
+  .card{border-radius:var(--radius-lg);}
+  .g3{grid-template-columns:1fr 1fr;}
+  .g3b{grid-template-columns:1fr 1fr;}
+  .expense-list-card-wrap{padding:0 16px;}
+  .stat-value{font-size:16px;}
+  .budget-header{flex-direction:column;align-items:flex-start;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .acc-btn{padding:6px 8px;font-size:12px;}
+}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
+</style>
+</head>
+<body>
+<div class="app-wrap">
+
+  <!-- Desktop Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo"><span class="sb-logo-icon">✈</span> 旅行記帳本</div>
+      <div class="sb-sub">出國消費追蹤工具</div>
+    </div>
+    <div class="sb-body">
+      <div class="sb-label">我的旅程</div>
+      <div class="trip-list" id="sb-trip-list"></div>
+      <button class="add-trip-btn" onclick="openTripModal()">
+        <i class="ti ti-plus"></i> 新增旅程
+      </button>
+    </div>
+    <div class="sb-footer">
+      <button class="sb-btn" onclick="toggleTheme()"><i class="ti ti-sun" id="theme-icon"></i> 主題</button>
+      <button class="sb-btn" onclick="openCatModal()"><i class="ti ti-tag"></i> 類別</button>
+    </div>
+  </aside>
+
+  <!-- Mobile Header -->
+  <div class="mob-header">
+    <div class="mob-title">
+      <span id="mob-trip-flag">✈</span>
+      <span id="mob-trip-name">旅行記帳本</span>
+    </div>
+    <div class="mob-hbtns">
+      <button class="mob-hbtn" onclick="toggleTheme()"><i class="ti ti-sun" id="mob-theme-icon"></i></button>
+      <button class="mob-hbtn" onclick="openDrawer()"><i class="ti ti-map-2"></i></button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <main class="main" id="main">
+    <div class="empty-main">
+      <div class="empty-icon">✈</div>
+      <p>選擇或新增旅程開始記帳</p>
+      <button onclick="openTripModal()">新增第一趟旅程</button>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="mob-nav">
+    <div class="mob-nav-inner">
+      <button class="mob-nav-btn active" id="tab-home" onclick="setMobTab('home')">
+        <i class="ti ti-home"></i><span class="mob-nav-label">總覽</span>
+      </button>
+      <button class="mob-nav-btn" id="tab-add" onclick="setMobTab('add')">
+        <i class="ti ti-plus"></i><span class="mob-nav-label">記帳</span>
+      </button>
+      <button class="mob-nav-btn" id="tab-list" onclick="setMobTab('list')">
+        <i class="ti ti-list"></i><span class="mob-nav-label">明細</span>
+      </button>
+      <button class="mob-nav-btn" id="tab-stats" onclick="setMobTab('stats')">
+        <i class="ti ti-chart-bar"></i><span class="mob-nav-label">統計</span>
+      </button>
+      <button class="mob-nav-btn" id="tab-more" onclick="openCatModal()">
+        <i class="ti ti-settings"></i><span class="mob-nav-label">設定</span>
+      </button>
+    </div>
+  </nav>
+</div>
+
+<!-- Mobile Trip Drawer -->
+<div class="mob-drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+<div class="mob-drawer" id="mob-drawer">
+  <div class="mob-drawer-handle"></div>
+  <div class="mob-drawer-header">
+    <div class="mob-drawer-title">我的旅程</div>
+    <button class="mob-drawer-close" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="mob-drawer-body" id="mob-drawer-body"></div>
+</div>
+
+<!-- Trip Modal -->
+<div class="modal-backdrop" id="trip-modal">
+  <div class="modal-box" id="trip-modal-box"></div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-backdrop" id="cat-modal">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <h3>管理消費類別</h3>
+    <div class="cat-list" id="cat-list"></div>
+    <div class="cat-add-row">
+      <input type="text" id="new-cat-icon" placeholder="🔖" maxlength="2">
+      <input type="text" id="new-cat-name" placeholder="輸入類別名稱">
+      <button onclick="addCat()">新增</button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-confirm" onclick="closeCatModal()">完成</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_CATS=[
+  {id:'food',label:'餐飲',icon:'🍜',color:'#E24B4A'},
+  {id:'transport',label:'交通',icon:'🚇',color:'#378ADD'},
+  {id:'hotel',label:'住宿',icon:'🏨',color:'#7F77DD'},
+  {id:'shop',label:'購物',icon:'🛍',color:'#D4537E'},
+  {id:'ticket',label:'票券',icon:'🎟',color:'#1D9E75'},
+  {id:'cafe',label:'咖啡',icon:'☕',color:'#BA7517'},
+  {id:'activity',label:'活動',icon:'🎡',color:'#0F6E56'},
+  {id:'medical',label:'醫療',icon:'💊',color:'#533AB7'},
+  {id:'other',label:'其他',icon:'📌',color:'#888780'},
+];
+const CAT_COLORS=['#E24B4A','#378ADD','#7F77DD','#D4537E','#1D9E75','#BA7517','#0F6E56','#533AB7','#888780','#D85A30'];
+const CURRENCIES=[
+  {code:'JPY',name:'日圓',symbol:'¥',rate:0.22},
+  {code:'KRW',name:'韓圜',symbol:'₩',rate:0.024},
+  {code:'USD',name:'美元',symbol:'$',rate:32.5},
+  {code:'EUR',name:'歐元',symbol:'€',rate:35.2},
+  {code:'GBP',name:'英鎊',symbol:'£',rate:41.8},
+  {code:'HKD',name:'港幣',symbol:'HK$',rate:4.15},
+  {code:'SGD',name:'新幣',symbol:'S$',rate:23.9},
+  {code:'THB',name:'泰銖',symbol:'฿',rate:0.93},
+  {code:'AUD',name:'澳幣',symbol:'A$',rate:20.8},
+  {code:'MYR',name:'馬幣',symbol:'RM',rate:7.2},
+  {code:'CNY',name:'人民幣',symbol:'¥',rate:4.5},
+  {code:'VND',name:'越南盾',symbol:'₫',rate:0.0013},
+];
+const FLAGS={'日本':'🇯🇵','韓國':'🇰🇷','美國':'🇺🇸','泰國':'🇹🇭','香港':'🇭🇰','新加坡':'🇸🇬','法國':'🇫🇷','英國':'🇬🇧','澳洲':'🇦🇺','馬來西亞':'🇲🇾','越南':'🇻🇳','中國':'🇨🇳','義大利':'🇮🇹','西班牙':'🇪🇸','德國':'🇩🇪'};
+
+let S={trips:[],categories:[...DEFAULT_CATS],activeTripId:null,activeAccount:'all',filterCat:'all',theme:'light',mobTab:'home'};
+
+function load(){
+  const d=localStorage.getItem('travel_v4');
+  if(d)try{Object.assign(S,JSON.parse(d));}catch(e){}
+  applyTheme();
+}
+function save(){localStorage.setItem('travel_v4',JSON.stringify(S));}
+function getCur(code){return CURRENCIES.find(c=>c.code===code)||CURRENCIES[0];}
+function getTrip(){return S.trips.find(t=>t.id===S.activeTripId);}
+function getCat(id){return S.categories.find(c=>c.id===id)||S.categories[S.categories.length-1];}
+function getDays(t){const d1=new Date(t.startDate),d2=new Date(t.endDate);return Math.max(1,Math.round((d2-d1)/86400000)+1);}
+function toTWD(e){return e.amount*getCur(e.currency).rate;}
+
+function toggleTheme(){
+  S.theme=S.theme==='light'?'dark':'light';
+  applyTheme();save();
+}
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',S.theme);
+  const icon=S.theme==='dark'?'ti ti-moon':'ti ti-sun';
+  document.getElementById('theme-icon').className=icon;
+  document.getElementById('mob-theme-icon').className=icon;
+  document.getElementById('theme-meta').setAttribute('content',S.theme==='dark'?'#1c1c1e':'#ffffff');
+}
+
+// ── Sidebar ──
+function renderSidebar(){
+  document.getElementById('sb-trip-list').innerHTML=S.trips.map(t=>`
+    <button class="trip-item ${t.id===S.activeTripId?'active':''}" onclick="selectTrip('${t.id}')">
+      <span class="trip-flag">${t.flag}</span>
+      <div class="trip-info">
+        <div class="trip-name">${t.name}</div>
+        <div class="trip-date">${t.startDate}→${t.endDate}</div>
+      </div>
+    </button>`).join('');
+}
+
+// ── Mobile drawer ──
+function openDrawer(){
+  document.getElementById('mob-drawer-body').innerHTML=S.trips.map(t=>`
+    <button class="mob-trip-item ${t.id===S.activeTripId?'active':''}" onclick="selectTrip('${t.id}');closeDrawer();">
+      <span class="mob-trip-flag">${t.flag}</span>
+      <div class="mob-trip-info">
+        <div class="mob-trip-name">${t.name}</div>
+        <div class="mob-trip-date">${t.startDate} → ${t.endDate}</div>
+      </div>
+    </button>`).join('')+
+    `<button class="mob-add-btn" onclick="closeDrawer();openTripModal();"><i class="ti ti-plus"></i> 新增旅程</button>`;
+  document.getElementById('drawer-backdrop').classList.add('open');
+  document.getElementById('mob-drawer').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('drawer-backdrop').classList.remove('open');
+  document.getElementById('mob-drawer').classList.remove('open');
+}
+
+function selectTrip(id){
+  S.activeTripId=id;S.activeAccount='all';S.filterCat='all';
+  const t=getTrip();
+  if(t){
+    document.getElementById('mob-trip-flag').textContent=t.flag;
+    document.getElementById('mob-trip-name').textContent=t.name;
+  }
+  renderSidebar();renderMain();save();
+}
+
+// ── Mobile tabs ──
+function setMobTab(tab){
+  S.mobTab=tab;
+  ['home','add','list','stats'].forEach(t=>{
+    const b=document.getElementById('tab-'+t);
+    if(b)b.classList.toggle('active',t===tab);
+  });
+  renderMain();
+}
+
+// ── Main render ──
+function renderMain(){
+  const trip=getTrip();
+  const el=document.getElementById('main');
+  if(!trip){
+    el.innerHTML=`<div class="empty-main">
+      <div class="empty-icon">✈</div>
+      <p>選擇或新增旅程開始記帳</p>
+      <button onclick="openTripModal()">新增旅程</button>
+    </div>`;
+    return;
+  }
+
+  const isMob=window.innerWidth<=768;
+  if(isMob){renderMobile(trip,el);}else{renderDesktop(trip,el);}
+}
+
+function buildStats(trip){
+  const all=trip.expenses||[];
+  const totalTWD=all.reduce((s,e)=>s+toTWD(e),0);
+  const personal=all.filter(e=>e.account==='personal').reduce((s,e)=>s+toTWD(e),0);
+  const group=all.filter(e=>e.account==='group').reduce((s,e)=>s+toTWD(e),0);
+  const budget=trip.budget||0;
+  const remaining=budget-totalTWD;
+  const pct=budget>0?Math.min(100,(totalTWD/budget)*100):0;
+  const days=getDays(trip);
+  let sClass='',barColor='#639922';
+  if(budget>0){if(pct>=100){sClass='danger';barColor='#E24B4A';}else if(pct>=80){sClass='warn';barColor='#BA7517';}else sClass='good';}
+  const catTotals={};
+  S.categories.forEach(c=>catTotals[c.id]=0);
+  all.forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+toTWD(e);});
+  return {all,totalTWD,personal,group,budget,remaining,pct,days,sClass,barColor,catTotals};
+}
+
+function statsHTML(s,trip){
+  const {totalTWD,personal,group,budget,remaining,sClass,days,pct}=s;
+  return `<div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">總花費</div><div class="stat-value">NT$${Math.round(totalTWD).toLocaleString()}</div><div class="stat-sub">${s.all.length} 筆記錄</div></div>
+    <div class="stat-card"><div class="stat-label">個人帳</div><div class="stat-value">NT$${Math.round(personal).toLocaleString()}</div><div class="stat-sub">${s.all.filter(e=>e.account==='personal').length} 筆</div></div>
+    <div class="stat-card"><div class="stat-label">公帳</div><div class="stat-value">NT$${Math.round(group).toLocaleString()}</div><div class="stat-sub">${s.all.filter(e=>e.account==='group').length} 筆</div></div>
+    <div class="stat-card ${sClass}"><div class="stat-label">${remaining<0?'超出預算':'剩餘預算'}</div><div class="stat-value">${budget>0?(remaining<0?'-':'')+'NT$'+Math.abs(Math.round(remaining)).toLocaleString():'—'}</div><div class="stat-sub">${budget>0&&remaining>0?'每天可用 NT$'+Math.round(remaining/days).toLocaleString():(budget===0?'尚未設定':'')}</div></div>
+  </div>`;
+}
+
+function budgetHTML(s,trip){
+  const {budget,pct,barColor,totalTWD}=s;
+  return `<div class="budget-card">
+    <div class="budget-header">
+      <div class="budget-title">預算進度</div>
+      <div class="budget-inp-row">
+        <label>NT$</label>
+        <input type="number" id="budget-inp" value="${budget>0?Math.round(budget):''}" placeholder="輸入預算" min="0" step="1000">
+        <button onclick="saveBudget()">儲存</button>
+      </div>
+    </div>
+    ${budget>0?`
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(pct)}%;background:${barColor};"></div></div>
+      <div class="bar-labels"><span>NT$0</span><span style="color:${barColor};font-weight:600;">${Math.round(pct)}% · NT$${Math.round(totalTWD).toLocaleString()}</span><span>NT$${Math.round(budget).toLocaleString()}</span></div>
+    `:`<div style="text-align:center;padding:8px;font-size:13px;color:var(--text3);">輸入預算後追蹤花費進度</div>`}
+  </div>`;
+}
+
+function addFormHTML(trip){
+  const curOpts=CURRENCIES.map(c=>`<option value="${c.code}" ${c.code===trip.currency?'selected':''}>${c.code}</option>`).join('');
+  const catOpts=S.categories.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+  return `<div class="card">
+    <div class="card-title">新增消費</div>
+    <div class="form-grid g3">
+      <div class="field"><label>描述</label><input type="text" id="inp-desc" placeholder="例：午餐拉麵"></div>
+      <div class="field"><label>金額</label><input type="number" id="inp-amt" placeholder="0" inputmode="decimal"></div>
+      <div class="field"><label>幣別</label><select id="inp-cur">${curOpts}</select></div>
+    </div>
+    <div class="form-grid g3b">
+      <div class="field"><label>類別</label><select id="inp-cat">${catOpts}</select></div>
+      <div class="field"><label>帳戶</label><select id="inp-acc"><option value="personal">個人帳</option><option value="group">公帳</option></select></div>
+      <div class="field"><label>日期</label><input type="date" id="inp-date" value="${trip.startDate}"></div>
+    </div>
+    <button class="btn-add" onclick="addExpense()"><i class="ti ti-plus"></i> 新增記錄</button>
+  </div>`;
+}
+
+function expListHTML(trip,s){
+  const filtered=(trip.expenses||[]).filter(e=>
+    (S.activeAccount==='all'||e.account===S.activeAccount)&&
+    (S.filterCat==='all'||e.cat===S.filterCat)
+  );
+  const chips=[{id:'all',label:'全部',icon:''},...S.categories].map(c=>
+    `<button class="chip ${S.filterCat===c.id?'active':''}" onclick="setFilter('${c.id}')">${c.icon} ${c.label||'全部'}</button>`
+  ).join('');
+  const items=[...filtered].reverse().map(e=>{
+    const c=getCat(e.cat),ec=getCur(e.currency);
+    return `<div class="exp-item">
+      <div class="exp-icon" style="background:${c.color}22;">${c.icon}</div>
+      <div class="exp-body">
+        <div class="exp-name">${e.desc||'未命名'}</div>
+        <div class="exp-meta">
+          <span>${c.label}</span><span>·</span><span>${e.date}</span><span>·</span>
+          <span class="badge ${e.account==='group'?'b-group':'b-personal'}">${e.account==='group'?'公帳':'個人'}</span>
+        </div>
+      </div>
+      <div class="exp-right">
+        <div class="exp-local">${ec.symbol}${e.amount.toLocaleString()}</div>
+        <div class="exp-twd">≈ NT$${Math.round(toTWD(e)).toLocaleString()}</div>
+      </div>
+      <button class="exp-del" onclick="deleteExpense('${e.id}')"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+  return `<div class="card">
+    <div class="exp-header"><div class="card-title" style="margin:0">消費記錄</div><span style="font-size:12px;color:var(--text3)">${filtered.length} 筆</span></div>
+    <div class="filter-row">${chips}</div>
+    ${filtered.length===0?'<div class="no-items">目前沒有符合條件的記錄</div>':items}
+  </div>`;
+}
+
+function catStatsHTML(s){
+  const {catTotals,totalTWD}=s;
+  const totalForPct=totalTWD||1;
+  return `<div class="card">
+    <div class="card-title">分類統計</div>
+    ${S.categories.map(c=>{
+      const val=catTotals[c.id]||0;
+      const p=val/totalForPct*100;
+      return `<div class="cat-bar">
+        <div class="cat-bar-lbl"><span>${c.icon} ${c.label}</span><span>NT$${Math.round(val).toLocaleString()}</span></div>
+        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${Math.round(p)}%;background:${c.color};"></div></div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function ratesHTML(){
+  return `<div class="card">
+    <div class="card-title">參考匯率</div>
+    ${CURRENCIES.slice(0,7).map(c=>`<div class="rate-row">
+      <div><div class="rate-code">${c.code}</div><div class="rate-name">${c.name}</div></div>
+      <div class="rate-val">1 ${c.code} = NT$${c.rate}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function accToggleHTML(){
+  return `<div class="acc-toggle">
+    <button class="acc-btn ${S.activeAccount==='all'?'active':''}" onclick="setAccount('all')">全部</button>
+    <button class="acc-btn ${S.activeAccount==='personal'?'active':''}" onclick="setAccount('personal')">個人</button>
+    <button class="acc-btn ${S.activeAccount==='group'?'active':''}" onclick="setAccount('group')">公帳</button>
+  </div>`;
+}
+
+// ── Desktop render ──
+function renderDesktop(trip,el){
+  const s=buildStats(trip);
+  el.innerHTML=`
+    <div class="topbar">
+      <div class="topbar-left"><h2>${trip.flag} ${trip.name}</h2><p>${trip.startDate} → ${trip.endDate} · ${s.days} 天</p></div>
+      ${accToggleHTML()}
+    </div>
+    ${statsHTML(s,trip)}
+    ${budgetHTML(s,trip)}
+    <div class="content-grid">
+      <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        ${addFormHTML(trip)}
+        ${expListHTML(trip,s)}
+      </div>
+      <div class="right-col">
+        ${catStatsHTML(s)}
+        ${ratesHTML()}
+      </div>
+    </div>`;
+}
+
+// ── Mobile render ──
+function renderMobile(trip,el){
+  const s=buildStats(trip);
+  const tab=S.mobTab;
+  let content='';
+
+  if(tab==='home'){
+    content=`
+      <div style="padding:0 0 16px;">
+        <div class="topbar" style="padding:12px 16px 8px;">
+          <div class="topbar-left"><p style="font-size:13px;color:var(--text3);">${trip.startDate} → ${trip.endDate} · ${s.days} 天</p></div>
+          ${accToggleHTML()}
+        </div>
+        ${statsHTML(s,trip)}
+        ${budgetHTML(s,trip)}
+      </div>`;
+  } else if(tab==='add'){
+    content=`<div style="padding:12px 16px;">${addFormHTML(trip)}</div>`;
+  } else if(tab==='list'){
+    content=`<div style="padding:12px 16px;">${expListHTML(trip,s)}</div>`;
+  } else if(tab==='stats'){
+    content=`<div style="padding:12px 16px;display:flex;flex-direction:column;gap:12px;">${catStatsHTML(s)}${ratesHTML()}</div>`;
+  }
+  el.innerHTML=content;
+}
+
+function setAccount(acc){S.activeAccount=acc;renderMain();}
+function setFilter(cat){S.filterCat=cat;renderMain();}
+
+function saveBudget(){
+  const trip=getTrip();if(!trip)return;
+  const v=parseFloat(document.getElementById('budget-inp').value);
+  trip.budget=isNaN(v)||v<0?0:v;
+  save();renderMain();
+}
+
+function addExpense(){
+  const trip=getTrip();if(!trip)return;
+  const desc=document.getElementById('inp-desc').value.trim();
+  const amt=parseFloat(document.getElementById('inp-amt').value);
+  if(!amt||amt<=0){alert('請輸入有效金額');return;}
+  if(!trip.expenses)trip.expenses=[];
+  trip.expenses.push({
+    id:Date.now().toString(),
+    desc:desc||'未命名',
+    amount:amt,
+    currency:document.getElementById('inp-cur').value,
+    cat:document.getElementById('inp-cat').value,
+    account:document.getElementById('inp-acc').value,
+    date:document.getElementById('inp-date').value||trip.startDate
+  });
+  save();
+  if(window.innerWidth<=768){setMobTab('list');}else{renderMain();}
+}
+
+function deleteExpense(id){
+  const trip=getTrip();if(!trip)return;
+  trip.expenses=(trip.expenses||[]).filter(e=>e.id!==id);
+  save();renderMain();
+}
+
+// ── Trip modal ──
+function openTripModal(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('trip-modal-box').innerHTML=`
+    <div class="modal-handle"></div>
+    <h3>新增旅程</h3>
+    <div class="mfield"><label>目的地名稱</label>
+      <input type="text" id="m-name" placeholder="例：日本東京" list="dest-l">
+      <datalist id="dest-l">${Object.keys(FLAGS).map(k=>`<option value="${k}">`).join('')}</datalist>
+    </div>
+    <div class="mfield"><label>主要幣別</label>
+      <select id="m-cur">${CURRENCIES.map(c=>`<option value="${c.code}">${c.code} ${c.name}</option>`).join('')}</select>
+    </div>
+    <div class="mfield"><label>旅遊預算 NT$（選填）</label>
+      <input type="number" id="m-budget" placeholder="例：60000" inputmode="numeric">
+    </div>
+    <div class="mfield"><label>出發日期</label><input type="date" id="m-start" value="${today}"></div>
+    <div class="mfield"><label>回國日期</label><input type="date" id="m-end" value="${today}"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeTripModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmTrip()">建立旅程</button>
+    </div>`;
+  document.getElementById('trip-modal').classList.add('open');
+}
+function closeTripModal(){document.getElementById('trip-modal').classList.remove('open');}
+function confirmTrip(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name){alert('請輸入目的地名稱');return;}
+  const bv=parseFloat(document.getElementById('m-budget').value);
+  const trip={
+    id:Date.now().toString(),name,flag:FLAGS[name]||'✈',
+    currency:document.getElementById('m-cur').value,
+    budget:isNaN(bv)||bv<0?0:bv,
+    startDate:document.getElementById('m-start').value,
+    endDate:document.getElementById('m-end').value,
+    expenses:[]
+  };
+  S.trips.unshift(trip);S.activeTripId=trip.id;
+  document.getElementById('mob-trip-flag').textContent=trip.flag;
+  document.getElementById('mob-trip-name').textContent=trip.name;
+  save();closeTripModal();renderSidebar();renderMain();
+}
+document.getElementById('trip-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeTripModal();});
+
+// ── Cat modal ──
+function openCatModal(){renderCatList();document.getElementById('cat-modal').classList.add('open');}
+function closeCatModal(){document.getElementById('cat-modal').classList.remove('open');renderMain();}
+function renderCatList(){
+  document.getElementById('cat-list').innerHTML=S.categories.map(c=>`
+    <div class="cat-item">
+      <span class="cat-item-icon">${c.icon}</span>
+      <span class="cat-item-name" style="color:${c.color}">${c.label}</span>
+      ${!DEFAULT_CATS.find(d=>d.id===c.id)?`<button class="cat-del" onclick="deleteCat('${c.id}')"><i class="ti ti-x"></i></button>`:''}
+    </div>`).join('');
+}
+function addCat(){
+  const icon=document.getElementById('new-cat-icon').value.trim()||'🔖';
+  const name=document.getElementById('new-cat-name').value.trim();
+  if(!name){alert('請輸入類別名稱');return;}
+  S.categories.push({id:'cat_'+Date.now(),label:name,icon,color:CAT_COLORS[S.categories.length%CAT_COLORS.length]});
+  document.getElementById('new-cat-icon').value='';
+  document.getElementById('new-cat-name').value='';
+  save();renderCatList();
+}
+function deleteCat(id){
+  if(!confirm('確定刪除此類別？'))return;
+  S.categories=S.categories.filter(c=>c.id!==id);
+  save();renderCatList();
+}
+document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCatModal();});
+
+// ── Resize ──
+window.addEventListener('resize',()=>{if(getTrip())renderMain();});
+
+// ── Init ──
+load();
+renderSidebar();
+const t=getTrip();
+if(t){
+  document.getElementById('mob-trip-flag').textContent=t.flag;
+  document.getElementById('mob-trip-name').textContent=t.name;
+  renderMain();
+}
+</script>
+</body>
+</html>
